@@ -2,28 +2,24 @@
 
 S1201-Recursive-Sortmerge-App.cpp
 
-The Sort-Merge algorithm is a prime example of the divide-and-conquer paradigm.
+The Sort-Merge algorithm, with its elegant recursive design,
+is a prime example of the divide-and-conquer paradigm.
 The algorithm consists of three steps:
 
 Divide:
-- Divide the array into smaller chunks recursively until each chunk has only one element
-  (or a 'very small' size, say k).
+- Divide the array into smaller chunks recursively until each chunk has only one element.
 - This is the base case.
  -For simplicity, let's assume we divide the array into halves.
-Optional Step:
-- Sort each chunk of size == k, 1 < k < m, use any sorting algorithm (s.a. insertion sort).
-  This idea is not used in this solution (we stop splitting when the chunk size is 1).    
+Conquer:
+- Sort each chunk using any sorting algorithm (typically merge sort).
 Merge:
-- Combine the sorted chunks back together into a single sorted array.
+- Merge the sorted chunks back together into a single sorted array.
 
 The key advantage of the Sort-Merge algorithm is its efficiency
 in sorting large datasets that cannot fit into memory all at once.
-
 Dividing the data into smaller chunks and sorting them individually
-reduces the memory requirement. 
-
-Additionally, the merge step is efficient since it only requires 
-comparing and merging already sorted lists.
+reduces the memory requirement. Additionally, the merge step is efficient
+since it only requires comparing and merging already sorted lists.
 */
 
 #include <iostream>
