@@ -33,9 +33,12 @@ comparing and merging already sorted lists.
 using namespace std;
 using namespace std::chrono;
 //Prototypes -------------------------------------------------------------------------
-void msort(vector<int>& v);
-void msort(vector<int>& v, vector<int>& aux, int lo, int hi);
-void mymerge(vector<int>& v, vector<int>& aux, int lo, int hi);
+void mergeSort(vector<int>& v);
+void mergeSort(vector<int>& v, vector<int>& aux, int lo, int hi);
+void myMerge(vector<int>& v, vector<int>& aux, int lo, int mid, int hi);
+
+void mergeSortNonRecursive(vector<int>& v);
+void mergeSortNonRecursive(vector<int>& v, vector<int>& aux);
 
 void selectionSort(vector<int>& v);
 void recursiveSelectionSort(vector<int>& v);
@@ -44,6 +47,7 @@ void recursiveSelectionSort(vector<int>& v, int first, int last);
 void showVector(vector<int> v, string caption = "");
 void experiment01();
 void experiment02();
+void experiment03();
 
 
 //Prototypes -------------------------------------------------------------------------
@@ -52,13 +56,48 @@ int main()
 
     //experiment01();   //Test ideas needed to construct the app
     experiment02();  //Benchmark mergesort and selection sort
+    experiment03();  //Test the non-recursive mergesort algorithm
 
     cout << "\nAll done!\n";
 }
-// =================================================================================
+
+void experiment03()
+{
+    //This array defines the size of the experimental unsorted samples
+    vector<int> vSampleSize{ 10, 100, 1000, 10000, 100000, 1000000 };
+    //vector<int> vSampleSize{ 10, };
+
+    //Benchmark performance of mergesort and selection-sort on each sample
+    for (auto N : vSampleSize) {
+        //declare and populate the vector holding random data items
+        vector<int> v(N);
+        for (int i = 0; i < N; i++) {
+            v[i] = rand() % 1000;
+        }
+
+        //Run the clock - Measure microseconds needed to sort the current sample
+        auto start = high_resolution_clock::now();
+        mergeSortNonRecursive(v);
+        //selectionSort(v);
+        //recursiveSelectionSort(v);            //will fail after 3k calls - stack overflow!
+        auto stop = high_resolution_clock::now();
+
+        //Determine duration of the sorting function working on the given sample
+        auto duration = duration_cast<microseconds>(stop - start);
+
+        //Show computational time required by the sample
+        cout << "Vector size: " << setw(12) << left << N << "Elapsed Time: "
+            << duration.count() << " microseconds" << endl;
+    }
+
+}
+
+
+// ==============================================================================================
 void experiment02()
 {
     //This array defines the size of the experimental unsorted samples
+    //vector<int> vSampleSize{ 10, };
     vector<int> vSampleSize{ 10, 100, 1000, 10000, 100000, 1000000 };
 
     //Benchmark performance of mergesort and selection-sort on each sample
@@ -71,24 +110,25 @@ void experiment02()
 
         //Run the clock - Measure microseconds needed to sort the current sample
         auto start = high_resolution_clock::now();
-        //msort(v);
-        selectionSort(v);
+        mergeSort(v);
+        //selectionSort(v);
         //recursiveSelectionSort(v);            //will fail after 3k calls - stack overflow!
         auto stop = high_resolution_clock::now();
 
-        //Determine durstion of the sorting function working on the given sample
+        //Determine duration of the sorting function working on the given sample
         auto duration = duration_cast<microseconds>(stop - start);
 
         //Show computational time required by the sample
-        cout << "Vector size: " << setw(12) << left << N << "Time taken by function: "
+        cout << "Vector size: " << setw(12) << left << N << "Elapsed Time: "
             << duration.count() << " microseconds" << endl;
+        //showVector(v, "Sorted vector (mergesort): ");   //debugging
     }
 
 
 }
 
 
-//----------------------------------------------------------
+//--------------------------------------------------------------------------------------------
 void experiment01()
 {
     using namespace std::chrono;
@@ -114,14 +154,15 @@ void experiment01()
 
     //Verify that the vector is indeed sorted!
     for (int i = 0; i < MAXSIZE-1; i++) {
-        if (v[i] > v[i + 1]) cout << "OH NOOO! - Invalid orden " << v[i] << endl;
+        if (v[i] > v[i + 1]) cout << "OH NOOO! - Invalid order " << v[i] << endl;
     }
     cout << "\nAll done!\n";
 }
+
 //-------------------------------------------------------------------------------------
 //SELECTION SORT
-//Non-recurvive implemenation. Swap the smallest element found in the unsorted region 
-//of the array with the first item of the usnsorted portion. 
+//Non-recursive implementation. Swap the smallest element found in the unsorted region 
+//of the array with the first item of the unsorted portion. 
 //-------------------------------------------------------------------------------------
 void selectionSort(vector<int>& v)
 {
@@ -153,6 +194,9 @@ void recursiveSelectionSort(vector<int>& v) {
 
 // -------------------------------------------------------------------------------------
 // The v region between first and last is unsorted
+// Find the largest element in the unsorted region and move it to the last position
+// Reduce the size of the unsorted region by one and repeat
+// -------------------------------------------------------------------------------------
 void recursiveSelectionSort(vector<int>& v, int first, int last)
 {
     //Base case
@@ -182,7 +226,7 @@ void recursiveSelectionSort(vector<int>& v, int first, int last)
 //MERGE SORT
 //Split the workspace. Recursively sort each half. Merge the sorted segments
 //-------------------------------------------------------------------------------------
-void msort(vector<int>& v, vector<int>& aux, int lo, int hi)
+void mergeSort(vector<int>& v, vector<int>& aux, int lo, int hi)
 {
     // Base case testing
     if (hi <= lo) return;           //if the array has only one element, return
@@ -191,22 +235,22 @@ void msort(vector<int>& v, vector<int>& aux, int lo, int hi)
     int mid = (lo + hi) / 2;        //mid point of the array
 
     //cout << "(" << lo << ", " << mid << "),  (" << mid + 1 << ", " << hi << ")" << endl; //debugging
-    msort(v, aux, lo, mid);         //sort the first half
-    msort(v, aux, mid + 1, hi);     //sort the second half
+    mergeSort(v, aux, lo, mid);         //sort the first half
+    mergeSort(v, aux, mid + 1, hi);     //sort the second half
     //cout << "Merging (" << lo << ", " << mid << "),  (" << mid + 1 << ", " << hi << ")" << endl; //debugging
-    mymerge(v, aux, lo, hi);        //merge the two halves
+    myMerge(v, aux, lo, mid, hi);        //merge the two halves
 
 }
 
 //----------------------------------------------------------
-void msort(vector<int>& v)
+void mergeSort(vector<int>& v)
 {
     // Helper function.
     // Create a temporary vector called 'aux' to copy the original vector v.
     // (It will be used during the merge step.)
     vector<int> aux(v.size());
 
-    msort(v, aux, 0, v.size() - 1);
+    mergeSort(v, aux, 0, v.size() - 1);
 }
 
 
@@ -218,13 +262,16 @@ void showVector(vector<int> v, string caption)
     cout << endl;
 }
 
-//------------------------------------------------------------
-void mymerge(vector<int>& v, vector<int>& aux, int lo, int hi)
-{
-    // copy segment v(lo,hi) into aux
-    for (int k = lo; k <= hi; k++) aux[k] = v[k]; 
 
-    int mid = (lo + hi) / 2;                // mid point of the array (lo,mid) (mid+1, hi)
+//------------------------------------------------------------
+void myMerge(vector<int>& v, vector<int>& aux, int lo, int mid, int hi)
+{
+    //cout << "Merge  [" << lo << ", " << mid << "]   [" << mid + 1 << ", " << hi << "]" << endl;  //debugging
+    
+    // copy segment v(lo,hi) into aux
+    for (int k = lo; k <= hi; k++) aux[k] = v[k];
+
+    // mixes array (lo,mid) (mid+1, hi)
     int i = lo;                             // index for the first half
     int j = mid + 1;                        // index for the second half
 
@@ -239,4 +286,35 @@ void mymerge(vector<int>& v, vector<int>& aux, int lo, int hi)
             v[k] = aux[j++];                // copy the second half leader into v
 
     }
+}
+
+//-------------------------------------------------------------------------------------------
+
+void mergeSortNonRecursive(vector<int>& v)
+{
+    // Helper function
+    // Create a temporary vector called 'aux' to copy the original vector v.
+    // (It will be used during the merge step.)
+    vector<int> aux(v.size());
+    mergeSortNonRecursive(v, aux);
+}
+
+
+//-------------------------------------------------------------------------------------------
+void mergeSortNonRecursive(vector<int>& v, vector<int>& aux)
+{
+    //Bottom-up mergesort, combine groups of size: 1, 2, 4, 8, 16, ...
+    int N = v.size();
+    for (int sz = 1; sz < N; sz += sz) //sizes 1, 2, 4, 8, 16, ...
+    {
+        //cout << "sz: " << sz << endl;  //debugging  
+        for (int lo = 0; lo < N - sz; lo += 2*sz) {
+            long mid = lo + sz - 1;
+            long hi = min(lo + 2*sz - 1, N - 1);
+            myMerge(v, aux, lo, mid, hi);
+        }
+    }
+    //showVector(v, "Sorted vector: ");   //debugging
+
+
 }
